@@ -1,0 +1,20 @@
+import VolunteerNavbar from '@/app/volunteer/VolunteerNavbar';
+import VolunteerFooter from '@/app/volunteer/VolunteerFooter';
+
+export default function VolunteerLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col min-h-screen">
+      <VolunteerNavbar />
+      <main className="flex-grow">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {children}
+        </div>
+      </main>
+      <VolunteerFooter />
+    </div>
+  );
+}
