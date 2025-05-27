@@ -7,6 +7,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 10000,
 });
 
 // Add request interceptor to attach auth token
@@ -23,6 +24,14 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+        if (error.code === 'ERR_NETWORK') {
+      console.error('Network error - possibly CORS issue:', error);
+      return Promise.reject(new Error('Network error. Please check if the server is running and CORS is configured.'));
+    }
+    if (error.response && error.response.status === 403) {
+      console.error('Forbidden - possibly invalid token:', error);
+      return Promise.reject(new Error('Access forbidden. Please log in again.'));
+    }
     
     if (error.response.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
@@ -31,12 +40,18 @@ api.interceptors.response.use(
         const refreshResponse = await api.post('/auth/refresh-token');
         const { access_token } = refreshResponse.data;
         
-        localStorage.setItem('accessToken', access_token);
+          if (typeof window !== 'undefined') {
+          localStorage.setItem('accessToken', access_token);
+        }
         
-        originalRequest.headers.Authorization = `Bearer ${access_token}`;
+        
+       originalRequest.headers.Authorization = `Bearer ${access_token}`;
         return api(originalRequest);
       } catch (refreshError) {
-        window.location.href = '/login';
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('accessToken');
+          window.location.href = '/login';
+        }
         return Promise.reject(refreshError);
       }
     }
@@ -54,7 +69,7 @@ export const authAPI = {
   register: (userData: any) => api.post('/auth/register', userData),
   getCurrentUser: () => api.get('/auth/me'),
   updateProfile: (data: any) => api.put('/auth/me', data), // NEW
-  updateUser: (id: number, data: any) => api.put(`/auth/users/${id}`, data), // NEW
+  updateUser: (id: number, data: any) => api.put(`/auth/users/${id}`, data), // For Admin Only
   forgotPassword: (email: string) => api.post('/auth/forgot-password', { email }),
   resetPassword: (token: string, newPassword: string) => 
     api.post('/auth/reset-password', { token, new_password: newPassword }),
@@ -63,7 +78,18 @@ export const authAPI = {
 
 // Opportunities API
 export const opportunitiesAPI = {
-  getAll: (params?: any) => api.get('/opportunities', { params }),
+  getAll: async (params?: any) => {
+    try {
+      console.log('Making API call with params:', params);
+      const response = await api.get('/opportunities', { params });
+      console.log('API response:', response);
+      return response;
+    } catch (error) {
+      console.error('API call failed:', error);
+      console.error('Error response:', error.response);
+      throw error;
+    }
+  },
   getById: (id: number) => api.get(`/opportunities/${id}`),
   create: (data: any) => api.post('/opportunities', data),
   update: (id: number, data: any) => api.put(`/opportunities/${id}`, data),

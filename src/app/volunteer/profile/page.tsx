@@ -32,6 +32,7 @@ interface FormData {
   availability: string;
   emergency_contact: string;
   date_of_birth: string;
+  avatar: string;
 }
 
 export default function VolunteerProfile() {
@@ -49,7 +50,8 @@ export default function VolunteerProfile() {
     skills: [],
     availability: '',
     emergency_contact: '',
-    date_of_birth: ''
+    date_of_birth: '',
+    avatar: ''
   });
   const [newSkill, setNewSkill] = useState('');
   const { user } = useAuth();
@@ -86,7 +88,8 @@ export default function VolunteerProfile() {
           skills: Array.isArray(profileData.skills) ? profileData.skills : [],
           availability: profileData.availability || '',
           emergency_contact: profileData.emergency_contact || '',
-          date_of_birth: profileData.date_of_birth ? profileData.date_of_birth.split('T')[0] : ''
+          date_of_birth: profileData.date_of_birth ? profileData.date_of_birth.split('T')[0] : '',
+          avatar: profileData.avatar || ''
         });
       } catch (error: any) {
         console.error('Error fetching profile:', error);
@@ -176,7 +179,8 @@ export default function VolunteerProfile() {
         skills: Array.isArray(profile.skills) ? profile.skills : [],
         availability: profile.availability || '',
         emergency_contact: profile.emergency_contact || '',
-        date_of_birth: profile.date_of_birth ? profile.date_of_birth.split('T')[0] : ''
+        date_of_birth: profile.date_of_birth ? profile.date_of_birth.split('T')[0] : '',
+        avatar: profile.avatar || '',
       });
     }
     setEditing(false);
@@ -232,19 +236,39 @@ export default function VolunteerProfile() {
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-8 text-white">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="h-20 w-20 rounded-full bg-white/20 flex items-center justify-center text-2xl font-bold">
-                {profile?.avatar ? (
-                  <img 
-                    src={profile.avatar} 
-                    alt={profile.name}
-                    className="h-full w-full rounded-full object-cover"
-                  />
-                ) : (
-                  profile?.name?.substring(0, 2).toUpperCase() || 'V'
-                )}
-              </div>
+              
+
+<div className="h-20 w-20 rounded-full bg-white/20 flex items-center justify-center text-2xl font-bold overflow-hidden">
+  {profile?.avatar ? (
+    <img 
+      src={profile.avatar} 
+      alt={profile?.name || 'User avatar'}
+      className="h-full w-full rounded-full object-cover"
+      onError={(e) => {
+        console.error('Avatar failed to load:', profile.avatar);
+        // Hide the image and show initials instead
+        e.currentTarget.style.display = 'none';
+        const parent = e.currentTarget.parentElement;
+        if (parent) {
+          parent.innerHTML = profile?.name?.substring(0, 2).toUpperCase() || 'V';
+          parent.className = parent.className.replace('overflow-hidden', '');
+        }
+      }}
+      onLoad={() => {
+        console.log('Avatar loaded successfully:', profile.avatar);
+      }}
+    />
+  ) : (
+    <span className="text-white">
+      {profile?.name?.substring(0, 2).toUpperCase() || 'V'}
+    </span>
+  )}
+</div>
+
               <div>
-                <h1 className="text-3xl font-bold">{profile?.name || 'Volunteer'}</h1>
+                <h1 className="text-3xl font-bold tracking-tight text-white">
+                  {profile?.name || 'Volunteer'}
+                </h1>
                 <p className="text-blue-100">{profile?.email}</p>
                 <p className="text-blue-100 text-sm">
                   Member since {formatDate(profile?.created_at || '')}
@@ -280,7 +304,7 @@ export default function VolunteerProfile() {
             <form onSubmit={(e) => { e.preventDefault(); handleUpdateProfile(); }} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2 tracking-wide">
                     <User className="inline h-4 w-4 mr-1" />
                     Full Name *
                   </label>
@@ -288,13 +312,13 @@ export default function VolunteerProfile() {
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
-                    className="w-full border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-500"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2 tracking-wide">
                     <Mail className="inline h-4 w-4 mr-1" />
                     Email *
                   </label>
@@ -303,9 +327,26 @@ export default function VolunteerProfile() {
                     type="email"
                     value={formData.email}
                     onChange={handleChange}
-                    className="w-full border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-500"
                     required
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Avatar URL
+                  </label>
+                  <input
+                    name="avatar"
+                    type="url"
+                    value={formData.avatar || ''}
+                    onChange={handleChange}
+                    className="w-full border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="https://example.com/your-photo.jpg"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Enter a URL to your profile picture
+                  </p>
                 </div>
 
                 <div>
@@ -461,7 +502,9 @@ export default function VolunteerProfile() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-1">Contact Information</h3>
+                    <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2 letterspacing-wide">
+                      Contact Information
+                    </h3>
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
                         <Mail className="h-4 w-4 text-gray-400" />

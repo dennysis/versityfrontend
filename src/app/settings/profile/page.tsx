@@ -2,7 +2,9 @@
 
 import { useAuth } from '@/context/AuthContext';
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+// ❌ Remove: import axios from 'axios';
+// ✅ Add:
+import { authAPI, volunteersAPI } from '@/lib/api';
 
 export default function ProfileSettings() {
   const { user } = useAuth();
@@ -22,22 +24,27 @@ export default function ProfileSettings() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        // Fetch profile data based on user role
-        const endpoint = user?.role === 'volunteer' 
-          ? `/api/volunteers/${user.id}` 
-          : `/api/users/${user.id}`;
-        
-        const response = await axios.get(endpoint);
+        // ❌ Replace hardcoded paths:
+        // const endpoint = user?.role === 'volunteer' 
+        //   ? `/api/volunteers/${user.id}` 
+        //   : `/api/users/${user.id}`;
+        // const response = await axios.get(endpoint);
+
+        // ✅ Use centralized API:
+        const response = user?.role === 'volunteer' 
+          ? await volunteersAPI.getProfile(user.id)
+          : await authAPI.getCurrentUser();
+          
         setProfile(response.data);
       } catch (error) {
         console.error('Error fetching profile:', error);
-        setMessage({ type: 'error', text: 'Failed to load profile data' });
+        setMessage({ type: 'error', text: 'Failed to load profile' });
       } finally {
         setLoading(false);
       }
     };
 
-    if (user) {
+    if (user?.id) {
       fetchProfile();
     }
   }, [user]);
@@ -47,22 +54,27 @@ export default function ProfileSettings() {
     setProfile(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    setMessage({ type: '', text: '' });
-
+  const handleSave = async () => {
     try {
-      // Update profile data based on user role
-      const endpoint = user?.role === 'volunteer' 
-        ? `/api/volunteers/${user.id}` 
-        : `/api/users/${user.id}`;
+      setSaving(true);
       
-      await axios.put(endpoint, profile);
-      setMessage({ type: 'success', text: 'Profile updated successfully' });
+      // ❌ Replace:
+      // const endpoint = user?.role === 'volunteer' 
+      //   ? `/api/volunteers/${user.id}` 
+      //   : `/api/users/${user.id}`;
+      // await axios.put(endpoint, profile);
+
+      // ✅ Use centralized API:
+      if (user?.role === 'volunteer') {
+        await volunteersAPI.updateProfile(user.id, profile);
+      } else {
+        await authAPI.updateProfile(profile);
+      }
+      
+      setMessage({ type: 'success', text: 'Profile updated successfully!' });
     } catch (error) {
-      console.error('Error updating profile:', error);
-      setMessage({ type: 'error', text: 'Failed to update profile' });
+      console.error('Error saving profile:', error);
+      setMessage({ type: 'error', text: 'Failed to save profile' });
     } finally {
       setSaving(false);
     }

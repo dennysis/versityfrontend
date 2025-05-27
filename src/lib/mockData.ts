@@ -554,6 +554,254 @@ export const mockApiDelay = (ms: number = 500) => {
   return new Promise(resolve => setTimeout(resolve, ms));
 };
 
+export const MOCK_VOLUNTEER_DATA = {
+  user: {
+    id: 1,
+    full_name: "John Doe",
+    email: "john.doe@example.com",
+    phone: "+1 (555) 123-4567",
+    location: "San Francisco, CA",
+    skills: ["Teaching", "Event Planning", "First Aid"],
+    bio: "Passionate volunteer with 3+ years of community service experience."
+  },
+  stats: {
+    total_hours: 45,
+    verified_hours: 32,
+    pending_hours: 8,
+    rejected_hours: 5
+  },
+  matches: [
+    { 
+      id: 1, 
+      status: 'accepted', 
+      opportunity_id: 1,
+      created_at: '2024-01-15T10:00:00Z',
+      updated_at: '2024-01-16T14:30:00Z'
+    },
+    { 
+      id: 2, 
+      status: 'accepted', 
+      opportunity_id: 2,
+      created_at: '2024-01-20T09:00:00Z',
+      updated_at: '2024-01-21T11:15:00Z'
+    },
+    { 
+      id: 3, 
+      status: 'completed', 
+      opportunity_id: 3,
+      created_at: '2024-01-10T08:00:00Z',
+      updated_at: '2024-01-25T16:45:00Z'
+    },
+    { 
+      id: 4, 
+      status: 'completed', 
+      opportunity_id: 4,
+      created_at: '2024-01-05T07:30:00Z',
+      updated_at: '2024-01-20T18:20:00Z'
+    },
+    { 
+      id: 5, 
+      status: 'pending', 
+      opportunity_id: 5,
+      created_at: '2024-01-28T12:00:00Z',
+      updated_at: '2024-01-28T12:00:00Z'
+    }
+  ],
+  opportunities: [
+    {
+      id: 1,
+      title: "Beach Cleanup Drive",
+      organization: { 
+        id: 1,
+        name: "Ocean Conservation Society",
+        location: "Santa Monica, CA"
+      },
+      description: "Help clean up local beaches and protect marine life. We provide all equipment and refreshments.",
+      location: "Santa Monica Beach",
+      date: "2024-02-15",
+      time: "09:00 AM - 1:00 PM",
+      volunteers_needed: 25,
+      volunteers_registered: 18,
+      skills_required: ["Physical Fitness", "Environmental Awareness"],
+      category: "Environment"
+    },
+    {
+      id: 2,
+      title: "Food Bank Volunteer",
+      organization: { 
+        id: 2,
+        name: "Community Food Network",
+        location: "Downtown LA"
+      },
+      description: "Sort and distribute food to families in need. Perfect for individuals or groups looking to make a direct impact.",
+      location: "Community Center, 123 Main St",
+      date: "2024-02-18",
+      time: "10:00 AM - 3:00 PM",
+      volunteers_needed: 15,
+      volunteers_registered: 12,
+      skills_required: ["Organization", "Customer Service"],
+      category: "Social Services"
+    },
+    {
+      id: 3,
+      title: "Youth Mentorship Program",
+      organization: { 
+        id: 3,
+        name: "Future Leaders Foundation",
+        location: "Beverly Hills, CA"
+      },
+      description: "Mentor high school students in career development, college preparation, and life skills.",
+      location: "Lincoln High School",
+      date: "2024-02-20",
+      time: "3:30 PM - 5:30 PM",
+      volunteers_needed: 10,
+      volunteers_registered: 8,
+      skills_required: ["Teaching", "Communication", "Leadership"],
+      category: "Education"
+    },
+    {
+      id: 4,
+      title: "Senior Care Assistance",
+      organization: { 
+        id: 4,
+        name: "Golden Years Care",
+        location: "Pasadena, CA"
+      },
+      description: "Provide companionship and assistance to elderly residents. Activities include reading, games, and light assistance.",
+      location: "Sunset Senior Living",
+      date: "2024-02-22",
+      time: "2:00 PM - 6:00 PM",
+      volunteers_needed: 8,
+      volunteers_registered: 6,
+      skills_required: ["Patience", "Communication", "Empathy"],
+      category: "Healthcare"
+    },
+    {
+      id: 5,
+      title: "Animal Shelter Helper",
+      organization: { 
+        id: 5,
+        name: "Paws & Hearts Rescue",
+        location: "West Hollywood, CA"
+      },
+      description: "Help care for rescued animals and assist with adoptions. Tasks include feeding, cleaning, and socializing animals.",
+      location: "Paws & Hearts Shelter",
+      date: "2024-02-25",
+      time: "8:00 AM - 12:00 PM",
+      volunteers_needed: 12,
+      volunteers_registered: 9,
+      skills_required: ["Animal Care", "Physical Fitness", "Reliability"],
+      category: "Animal Welfare"
+    }
+  ],
+  volunteerHours: [
+    {
+      id: 1,
+      opportunity_id: 3,
+      hours: 4,
+      date: "2024-01-25",
+      description: "Mentored 3 students in college application process",
+      status: "verified",
+      verified_by: "Jane Smith",
+      verified_at: "2024-01-26T10:00:00Z"
+    },
+    {
+      id: 2,
+      opportunity_id: 4,
+      hours: 6,
+      date: "2024-01-20",
+      description: "Assisted with activities and provided companionship",
+      status: "verified",
+      verified_by: "Mike Johnson",
+      verified_at: "2024-01-21T15:30:00Z"
+    },
+    {
+      id: 3,
+      opportunity_id: 1,
+      hours: 4,
+      date: "2024-01-28",
+      description: "Beach cleanup - collected 15 bags of trash",
+      status: "pending",
+      verified_by: null,
+      verified_at: null
+    }
+  ]
+};
+
+export const MOCK_ORGANIZATION_DATA = {
+  organization: {
+    id: 1,
+    name: "Ocean Conservation Society",
+    description: "Dedicated to protecting marine ecosystems through community action and education.",
+    contact_email: "info@oceanconservation.org",
+    location: "Santa Monica, CA",
+    website: "https://oceanconservation.org",
+    phone: "+1 (555) 987-6543",
+    founded: "2015",
+    volunteers_count: 150,
+    opportunities_count: 8
+  },
+  opportunities: [
+    {
+      id: 1,
+      title: "Beach Cleanup Drive",
+      description: "Monthly beach cleanup to protect marine life",
+      location: "Santa Monica Beach",
+      date: "2024-02-15",
+      volunteers_needed: 25,
+      volunteers_registered: 18,
+      status: "active"
+    },
+    {
+      id: 6,
+      title: "Marine Life Education Workshop",
+      description: "Teach children about ocean conservation",
+      location: "Santa Monica Pier Aquarium",
+      date: "2024-02-28",
+      volunteers_needed: 8,
+      volunteers_registered: 5,
+      status: "active"
+    }
+  ],
+  stats: {
+    total_volunteers: 150,
+    active_opportunities: 8,
+    total_hours_logged: 2450,
+    this_month_hours: 180
+  }
+};
+
+export const MOCK_ADMIN_DATA = {
+  stats: {
+    total_users: 1250,
+    total_volunteers: 980,
+    total_organizations: 45,
+    total_opportunities: 156,
+    total_hours: 15680,
+    pending_verifications: 23
+  },
+  recentActivity: [
+    {
+      id: 1,
+      type: "new_user",
+      message: "New volunteer registered: Sarah Johnson",
+      timestamp: "2024-01-28T14:30:00Z"
+    },
+    {
+      id: 2,
+      type: "new_opportunity",
+      message: "New opportunity posted: Community Garden Project",
+      timestamp: "2024-01-28T12:15:00Z"
+    },
+    {
+      id: 3,
+      type: "hours_logged",
+      message: "25 volunteer hours logged today",
+      timestamp: "2024-01-28T10:45:00Z"
+    }
+  ]
+};
+
 export default {
   createMockOrganization,
   createMockOpportunities,

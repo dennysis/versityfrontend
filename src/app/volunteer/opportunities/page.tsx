@@ -1,11 +1,117 @@
 'use client';
 import { useAuth } from '@/context/AuthContext';
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { opportunitiesAPI, matchesAPI } from '@/lib/api';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 
-axios.defaults.baseURL = 'https://versity-bck.onrender.com/api';
+// Mock data for development/fallback
+const MOCK_OPPORTUNITIES = [
+  {
+    id: 1,
+    title: "Community Garden Volunteer",
+    description: "Help maintain our community garden by planting, weeding, and harvesting fresh produce for local food banks. Perfect for those who love working outdoors and want to make a direct impact on food security in our community.",
+    organization_name: "Green City Initiative",
+    location: "Central Park Community Garden, NYC",
+    is_remote: false,
+    start_date: "2024-02-01",
+    end_date: "2024-11-30",
+    skills_required: "Gardening, Physical Labor, Teamwork",
+    category: "Environment",
+    created_at: "2024-01-15T10:00:00Z"
+  },
+  {
+    id: 2,
+    title: "Online Math Tutoring",
+    description: "Provide one-on-one math tutoring to high school students via video calls. Help students improve their grades and build confidence in mathematics. Flexible scheduling available.",
+    organization_name: "Education First",
+    location: "Remote",
+    is_remote: true,
+    start_date: "2024-01-20",
+    end_date: "2024-06-15",
+    skills_required: "Mathematics, Teaching, Communication",
+    category: "Education",
+    created_at: "2024-01-10T14:30:00Z"
+  },
+  {
+    id: 3,
+    title: "Senior Center Technology Helper",
+    description: "Assist elderly residents with using smartphones, tablets, and computers. Teach basic digital literacy skills and help seniors stay connected with their families through technology.",
+    organization_name: "Silver Years Community Center",
+    location: "Downtown Senior Center, Chicago",
+    is_remote: false,
+    start_date: "2024-02-05",
+    end_date: "2024-12-31",
+    skills_required: "Technology, Patience, Communication",
+    category: "Community Service",
+    created_at: "2024-01-12T09:15:00Z"
+  },
+  {
+    id: 4,
+    title: "Animal Shelter Dog Walker",
+    description: "Walk and socialize dogs at our animal shelter. Help provide exercise and human interaction for dogs waiting for their forever homes. Training provided for new volunteers.",
+    organization_name: "Paws & Hearts Animal Rescue",
+    location: "Westside Animal Shelter, Los Angeles",
+    is_remote: false,
+    start_date: "2024-01-25",
+    end_date: "2024-12-31",
+    skills_required: "Animal Care, Physical Fitness, Reliability",
+    category: "Animal Welfare",
+    created_at: "2024-01-08T16:45:00Z"
+  },
+  {
+    id: 5,
+    title: "Virtual Reading Buddy",
+    description: "Read stories to children via video calls to promote literacy and love of reading. Perfect for those who enjoy working with kids but prefer remote volunteering opportunities.",
+    organization_name: "Read Together Foundation",
+    location: "Remote",
+    is_remote: true,
+    start_date: "2024-02-01",
+    end_date: "2024-07-31",
+    skills_required: "Reading, Communication, Child Interaction",
+    category: "Education",
+    created_at: "2024-01-14T11:20:00Z"
+  },
+  {
+    id: 6,
+    title: "Food Bank Volunteer",
+    description: "Sort donations, pack food boxes, and help distribute meals to families in need. Join our team in fighting hunger in the local community. Various shifts available.",
+    organization_name: "Community Food Network",
+    location: "Central Food Bank, Houston",
+    is_remote: false,
+    start_date: "2024-01-30",
+    end_date: "2024-12-31",
+    skills_required: "Organization, Physical Labor, Teamwork",
+    category: "Community Service",
+    created_at: "2024-01-11T13:10:00Z"
+  },
+  {
+    id: 7,
+    title: "Beach Cleanup Coordinator",
+    description: "Help organize and lead monthly beach cleanup events. Coordinate with volunteers, manage supplies, and track environmental impact data. Leadership experience preferred.",
+    organization_name: "Ocean Guardians",
+    location: "Santa Monica Beach, CA",
+    is_remote: false,
+    start_date: "2024-02-10",
+    end_date: "2024-10-31",
+    skills_required: "Leadership, Organization, Environmental Awareness",
+    category: "Environment",
+    created_at: "2024-01-09T08:30:00Z"
+  },
+  {
+    id: 8,
+    title: "Crisis Text Line Counselor",
+    description: "Provide emotional support to people in crisis via text messaging. Complete our comprehensive training program and help save lives from anywhere with an internet connection.",
+    organization_name: "Crisis Support Network",
+    location: "Remote",
+    is_remote: true,
+    start_date: "2024-03-01",
+    end_date: "2024-12-31",
+    skills_required: "Empathy, Communication, Crisis Management",
+    category: "Mental Health",
+    created_at: "2024-01-13T15:45:00Z"
+  }
+];
 
 export default function VolunteerOpportunities() {
   const { user } = useAuth();
@@ -13,6 +119,7 @@ export default function VolunteerOpportunities() {
   const searchParams = useSearchParams();
   const [opportunities, setOpportunities] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [usingMockData, setUsingMockData] = useState(false);
   const [filters, setFilters] = useState({
     search: searchParams.get('search') || '',
     category: searchParams.get('category') || '',
@@ -28,61 +135,132 @@ export default function VolunteerOpportunities() {
     totalItems: 0,
   });
 
+  // Filter mock data based on current filters
+  const filterMockData = (data, filters) => {
+    let filtered = [...data];
+
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      filtered = filtered.filter(opp => 
+        opp.title.toLowerCase().includes(searchLower) ||
+        opp.description.toLowerCase().includes(searchLower) ||
+        opp.organization_name.toLowerCase().includes(searchLower)
+      );
+    }
+
+    if (filters.category) {
+      filtered = filtered.filter(opp => 
+        opp.category.toLowerCase() === filters.category.toLowerCase()
+      );
+    }
+
+    if (filters.location) {
+      filtered = filtered.filter(opp => 
+        opp.location.toLowerCase().includes(filters.location.toLowerCase())
+      );
+    }
+
+    if (filters.remote) {
+      filtered = filtered.filter(opp => opp.is_remote === true);
+    }
+
+    return filtered;
+  };
+
   useEffect(() => {
     const fetchOpportunities = async () => {
       try {
-        // Convert filters to query params that match the backend expectations
-        const params = new URLSearchParams();
-        if (filters.search) params.append('title', filters.search); // Changed from 'search' to 'title'
-        if (filters.location) params.append('location', filters.location);
+        setLoading(true);
         
-        // Convert page to skip/limit for backend pagination
+        // Convert filters to API params object
+        const apiParams = {};
+        if (filters.search) apiParams.search = filters.search;
+        if (filters.category) apiParams.category = filters.category;
+        if (filters.location) apiParams.location = filters.location;
+        if (filters.remote) apiParams.remote = true;
+        if (filters.dateRange) apiParams.dateRange = filters.dateRange;
+        
+        // Add pagination
         const limit = 10;
         const skip = (pagination.page - 1) * limit;
-        params.append('skip', skip.toString());
-        params.append('limit', limit.toString());
+        apiParams.skip = skip;
+        apiParams.limit = limit;
         
-        // Add auth header if user is logged in
-        const config = user ? { 
-          headers: { Authorization: `Bearer ${user.token}` } 
-        } : {};
+        console.log('Fetching opportunities with params:', apiParams);
         
-      const response = await axios.get(`/opportunities/?${params.toString()}`, config);
-
-            // Handle different response formats
-            if (Array.isArray(response.data)) {
-            // If backend returns just an array
+        try {
+          // Try to fetch from API first
+          const response = await opportunitiesAPI.getAll(apiParams);
+          console.log('API Response:', response.data);
+          
+          // Handle different response formats
+          if (Array.isArray(response.data)) {
             setOpportunities(response.data);
             setPagination({
-                page: pagination.page,
-                totalPages: Math.ceil(response.data.length / limit) || 1,
-                totalItems: response.data.length,
+              page: pagination.page,
+              totalPages: Math.ceil(response.data.length / limit) || 1,
+              totalItems: response.data.length,
             });
-            } else if (response.data.items) {
-            // If backend returns structured response
+          } else if (response.data.items) {
             setOpportunities(response.data.items);
             setPagination({
-                page: response.data.page,
-                totalPages: response.data.totalPages,
-                totalItems: response.data.totalItems,
+              page: response.data.page || pagination.page,
+              totalPages: response.data.totalPages || 1,
+              totalItems: response.data.totalItems || 0,
             });
-            }
+          } else {
+            setOpportunities(response.data);
+            setPagination({
+              page: pagination.page,
+              totalPages: 1,
+              totalItems: response.data.length || 0,
+            });
+          }
+          setUsingMockData(false);
+          
+        } catch (apiError) {
+          console.warn('API failed, using mock data:', apiError);
+          
+          // Use mock data as fallback
+          const filteredMockData = filterMockData(MOCK_OPPORTUNITIES, filters);
+          const startIndex = (pagination.page - 1) * limit;
+          const endIndex = startIndex + limit;
+          const paginatedData = filteredMockData.slice(startIndex, endIndex);
+          
+          setOpportunities(paginatedData);
+          setPagination({
+            page: pagination.page,
+            totalPages: Math.ceil(filteredMockData.length / limit) || 1,
+            totalItems: filteredMockData.length,
+          });
+          setUsingMockData(true);
+        }
 
       } catch (error) {
         console.error('Error fetching opportunities:', error);
-        setOpportunities([]);
+        
+        // Final fallback to mock data
+        const filteredMockData = filterMockData(MOCK_OPPORTUNITIES, filters);
+        setOpportunities(filteredMockData);
+        setPagination({
+          page: 1,
+          totalPages: 1,
+          totalItems: filteredMockData.length,
+        });
+        setUsingMockData(true);
       } finally {
         setLoading(false);
       }
     };
 
-    // Since /api/categories and /api/locations don't exist in the backend,
-    // we'll use hardcoded values or skip these requests
+    // Set mock data for categories and locations
     const mockCategories = [
       { id: 'education', name: 'Education' },
       { id: 'health', name: 'Health & Wellness' },
       { id: 'environment', name: 'Environment' },
-      { id: 'community', name: 'Community Service' },
+      { id: 'community service', name: 'Community Service' },
+      { id: 'animal welfare', name: 'Animal Welfare' },
+      { id: 'mental health', name: 'Mental Health' },
     ];
     
     const mockLocations = [
@@ -91,13 +269,14 @@ export default function VolunteerOpportunities() {
       'Los Angeles',
       'Chicago',
       'Houston',
+      'Santa Monica',
     ];
     
     setCategories(mockCategories);
     setLocations(mockLocations);
 
     fetchOpportunities();
-  }, [filters, pagination.page, user]);
+  }, [filters, pagination.page]);
 
   const handleFilterChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -130,28 +309,38 @@ export default function VolunteerOpportunities() {
     router.push(`/volunteer/opportunities?${params.toString()}`);
   };
 
-  const handleApply = async (opportunityId) => {
+  const handleApply = async (opportunityId: number) => {
     if (!user) {
       router.push('/login?redirect=/volunteer/opportunities');
       return;
     }
+    
     try {
-      // Add auth header for authenticated request
-    await axios.post('/matches/', // This will become http://localhost:8000/api/matches/
-  { opportunity_id: opportunityId },
-  { headers: { Authorization: `Bearer ${user.token || localStorage.getItem('accessToken')}` } }
-);
-      // Show success message or redirect
+      if (usingMockData) {
+        // Simulate application for mock data
+        alert('Application submitted successfully! (Demo mode)');
+        return;
+      }
+      
+      await matchesAPI.apply(opportunityId);
+      alert('Application submitted successfully!');
       router.push(`/volunteer/applications`);
     } catch (error) {
       console.error('Error applying for opportunity:', error);
-      // Show error message
+      alert('Failed to submit application. Please try again.');
     }
   };
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Volunteer Opportunities</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">Volunteer Opportunities</h1>
+        {usingMockData && (
+          <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-3 py-2 rounded text-sm">
+            
+          </div>
+        )}
+      </div>
       
       {/* Filters Section */}
       <div className="bg-white rounded-lg shadow p-6 mb-8">
@@ -245,6 +434,7 @@ export default function VolunteerOpportunities() {
         <div className="p-4 border-b">
           <h2 className="text-lg font-medium">
             {pagination.totalItems} {pagination.totalItems === 1 ? 'Opportunity' : 'Opportunities'} Found
+            {usingMockData && <span className="text-sm text-gray-500 ml-2">(Demo Data)</span>}
           </h2>
         </div>
 
@@ -274,7 +464,7 @@ export default function VolunteerOpportunities() {
                       {opportunity.start_date ? new Date(opportunity.start_date).toLocaleDateString() : 'Start Date'} - 
                       {opportunity.end_date ? new Date(opportunity.end_date).toLocaleDateString() : 'End Date'}
                     </div>
-                    <p className="mt-3 text-sm text-gray-600 line-clamp-2">
+                    <p className="mt-3 text-sm text-gray-600 line-clamp-3">
                       {opportunity.description || 'No description available'}
                     </p>
                     <div className="mt-2 flex flex-wrap gap-2">
@@ -325,7 +515,7 @@ export default function VolunteerOpportunities() {
           </div>
         )}
 
-               {/* Pagination */}
+        {/* Pagination */}
         {pagination.totalPages > 1 && (
           <div className="px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
             <div className="flex-1 flex justify-between sm:hidden">
@@ -377,7 +567,7 @@ export default function VolunteerOpportunities() {
                   {Array.from({ length: pagination.totalPages }).map((_, i) => {
                     const pageNumber = i + 1;
                     // Show current page, first and last pages, and one page before and after current
-                    const shouldShowPage = 
+                                        const shouldShowPage = 
                       pageNumber === 1 || 
                       pageNumber === pagination.totalPages || 
                       Math.abs(pageNumber - pagination.page) <= 1;
@@ -428,6 +618,31 @@ export default function VolunteerOpportunities() {
           </div>
         )}
       </div>
+
+      {/* Info Banner for Demo Mode */}
+      {usingMockData && (
+        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-blue-800">
+                Demo Mode Active
+              </h3>
+              <div className="mt-2 text-sm text-blue-700">
+                <p>
+                  You're viewing sample volunteer opportunities. The backend API is currently unavailable, 
+                  so we're showing demo data to showcase the application's functionality. 
+                  All features are working, but applications won't be saved.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
